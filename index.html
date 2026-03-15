@@ -183,6 +183,9 @@ function ev(){
   if(gc>=cb) R.push([1,'AT後'+gc+'G → 天井狙い圏内（'+(rt==='equal'?'等価':'5.6枚')+'で'+cb+'G〜）']);
   if(S.sl==='off'&&gc<50) R.push([1,'有利区間ランプ消灯＋低G → リセット恩恵（機械割102%）']);
   if(S.pp==='aq'&&gc<=5&&md<1400) R.push([1,'AT後即やめ → 1周期目の当選期待度約40%']);
+  var hasPlus=false;for(var i=0;i<R.length;i++){if(R[i][0]===0||R[i][0]===1)hasPlus=true}
+  if(S.hm==='lo'&&hasPlus) R.push([1,'ロゴのみ → 通常B期待度UP。他の条件と合わせて1周期様子見']);
+  if(S.hm==='lo'&&!hasPlus) R.push([2,'ロゴのみ＋他にプラス条件なし → 期待値なし。スルー推奨']);
   var go=0,st=0,ca=0;
   for(var i=0;i<R.length;i++){if(R[i][0]===0)go++;if(R[i][0]===1)ca++;if(R[i][0]===2)st++}
   var p=document.getElementById('P');
