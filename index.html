@@ -162,3 +162,234 @@
   ument.getElementById('medalDiff').value='';document.getElementById('result-details').style.display='none';var
    banner=document.getElementById('verdict-banner');banner.className='neutral';banner.innerHTML='<div>項目を入
   力してください</div><div id="verdict-reason"></div>'}setup();</script></body></html>
+
+  主な修正点：
+  - 全ボタンに type="button" を追加（フォーム送信防止）
+  - touchend イベントを追加（モバイルタッチ対応）
+  - テンプレートリテラル（バッククォート）を通常の文字列結合に変更（互換性UP）
+  - touch-action: manipulation を全体に適用
+  - ボタンのタッチ領域を少し大きく調整
+
+✻ Crunched for 1m 46s
+
+❯ URL
+
+⏺ https://masatoinamura0710-bit.github.io/-5-/
+
+  GitHubの反映に1〜2分かかることがあるので、ボタンがまだ反応しなければ少し待ってからリロードしてみてください。
+
+❯ ボタンが反応しないしUIと色味が微妙
+
+⏺ ゼロから作り直します。インラインイベント（onclick）方式 + UI/配色を刷新します。
+
+  GitHubの index.html を編集して、全て消して以下に置き換えてください。
+
+  <!DOCTYPE html>
+  <html lang="ja">
+  <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+  <title>MT-V判定</title>
+  <style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino
+  Sans',sans-serif;background:#0a0a0a;color:#fff;padding:12px;padding-bottom:130px}
+  h1{text-align:center;font-size:15px;padding:10px 0;color:#8bb4ff}
+  h2{font-size:12px;color:#6a9cff;margin:16px 0 8px;padding:6px
+  10px;background:#151520;border-radius:8px;display:flex;justify-content:space-between}
+  h2 span{color:#666;font-weight:400}
+  .g{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+  .g label{font-size:12px;color:#aaa;width:100%;margin-bottom:2px}
+  .b{background:#1a1a2a;color:#ccc;border:2px solid #2a2a3a;border-radius:10px;padding:10px
+  13px;font-size:13px;cursor:pointer;-webkit-user-select:none;user-select:none}
+  .b.on{background:#1a3a6a;border-color:#4a9eff;color:#fff;font-weight:700}
+  input[type=number]{background:#1a1a2a;color:#fff;border:2px solid
+  #2a2a3a;border-radius:10px;padding:10px;font-size:16px;width:90px;text-align:right;-webkit-appearance:none}
+  input:focus{outline:none;border-color:#4a9eff}
+  .unit{color:#666;font-size:12px;margin-left:4px}
+  .row{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+  #P{position:fixed;bottom:0;left:0;right:0;padding:16px;text-align:center;font-size:22px;font-weight:900;lette
+  r-spacing:1px;z-index:99;transition:all .2s}
+  #P.go{background:#00c853;color:#000}
+  #P.stop{background:#d50000;color:#fff}
+  #P.caut{background:#ff8f00;color:#000}
+  #P.wait{background:#1a1a2a;color:#555}
+  #P small{display:block;font-size:11px;font-weight:400;margin-top:3px;letter-spacing:0}
+  #D{background:#111118;border-radius:12px;padding:10px;margin:8px 0;display:none}
+  #D h3{font-size:12px;margin-bottom:6px;color:#8bb4ff}
+  #D div{font-size:11px;padding:3px 0;border-bottom:1px solid #1a1a2a;display:flex;align-items:center;gap:4px}
+  #D div:last-child{border:none}
+  .t{font-size:9px;padding:2px 5px;border-radius:4px;font-weight:700;flex-shrink:0}
+  .tgo{background:#00c853;color:#000}
+  .tst{background:#d50000;color:#fff}
+  .tca{background:#ff8f00;color:#000}
+  #R{display:block;margin:12px auto;background:#1a1a2a;color:#888;border:1px solid
+  #2a2a3a;border-radius:10px;padding:10px 28px;font-size:13px;cursor:pointer}
+  </style>
+  </head>
+  <body>
+  <h1>MONKEY TURN V CHECKER</h1>
+
+  <h2>基本設定</h2>
+  <div class="g">
+  <label>交換率</label>
+  <div class="b" onclick="sel(this,'xr','equal')">等価</div>
+  <div class="b" onclick="sel(this,'xr','56')">5.6枚</div>
+  </div>
+
+  <h2>データカウンター <span>0G</span></h2>
+  <div class="g">
+  <label>AT後ゲーム数</label>
+  <div class="row"><input type="number" id="gc" inputmode="numeric" placeholder="0"
+  onchange="S.gc=+this.value||0;ev()" oninput="S.gc=+this.value||0;ev()"><span class="unit">G</span></div>
+  </div>
+  <div class="g">
+  <label>差枚数</label>
+  <div class="row"><input type="number" id="md" inputmode="numeric" placeholder="0"
+  onchange="S.md=+this.value||0;ev()" oninput="S.md=+this.value||0;ev()"><span class="unit">枚</span></div>
+  </div>
+  <div class="g">
+  <label>前任者の状況</label>
+  <div class="b" onclick="sel(this,'pp','bw')">大勝ち後やめ</div>
+  <div class="b" onclick="sel(this,'pp','aq')">AT後即やめ</div>
+  <div class="b" onclick="sel(this,'pp','hq')">ハマりやめ</div>
+  <div class="b" onclick="sel(this,'pp','uk')">不明</div>
+  </div>
+
+  <h2>目視・タッチ確認 <span>0G</span></h2>
+  <div class="g">
+  <label>下パネル</label>
+  <div class="b" onclick="sel(this,'lp','off')">消灯</div>
+  <div class="b" onclick="sel(this,'lp','blink')">点滅</div>
+  <div class="b" onclick="sel(this,'lp','on')">通常</div>
+  <div class="b" onclick="sel(this,'lp','uk')">未確認</div>
+  </div>
+  <div class="g">
+  <label>有利区間ランプ（クレジット右下）</label>
+  <div class="b" onclick="sel(this,'sl','off')">消灯</div>
+  <div class="b" onclick="sel(this,'sl','on')">点灯</div>
+  <div class="b" onclick="sel(this,'sl','uk')">未確認</div>
+  </div>
+  <div class="g">
+  <label>EXアイテム（サブ液晶タッチ）</label>
+  <div class="b" onclick="sel(this,'ex','pg')">ペンギン</div>
+  <div class="b" onclick="sel(this,'ex','es')">EXストック</div>
+  <div class="b" onclick="sel(this,'ex','eg')">EXゲーム</div>
+  <div class="b" onclick="sel(this,'ex','no')">なし</div>
+  <div class="b" onclick="sel(this,'ex','uk')">未確認</div>
+  </div>
+  <div class="g">
+  <label>ヘルメット（サブ液晶タッチ）</label>
+  <div class="b" onclick="sel(this,'hm','lv')">ロゴ+V</div>
+  <div class="b" onclick="sel(this,'hm','ar')">ありさ</div>
+  <div class="b" onclick="sel(this,'hm','lk')">ロゴ+キラキラ</div>
+  <div class="b" onclick="sel(this,'hm','mh')">モノクロ波多野</div>
+  <div class="b" onclick="sel(this,'hm','ao')">青島</div>
+  <div class="b" onclick="sel(this,'hm','ot')">その他ライバル</div>
+  <div class="b" onclick="sel(this,'hm','no')">通常</div>
+  <div class="b" onclick="sel(this,'hm','uk')">未確認</div>
+  </div>
+  <div class="g">
+  <label>ライバルヘルメット（メイン画面）</label>
+  <div class="b" onclick="sel(this,'rh','mh')">モノクロ波多野</div>
+  <div class="b" onclick="sel(this,'rh','ao')">青島</div>
+  <div class="b" onclick="sel(this,'rh','ot')">その他キャラ</div>
+  <div class="b" onclick="sel(this,'rh','no')">なし</div>
+  <div class="b" onclick="sel(this,'rh','uk')">未確認</div>
+  </div>
+
+  <h2>実戦中の確認 <span>1G~</span></h2>
+  <div class="g">
+  <label>1G目のレア役</label>
+  <div class="b" onclick="sel(this,'fg','sc')">強チェリー</div>
+  <div class="b" onclick="sel(this,'fg','sm')">強チャンス目</div>
+  <div class="b" onclick="sel(this,'fg','wk')">弱レア役</div>
+  <div class="b" onclick="sel(this,'fg','no')">ハズレ/リプ</div>
+  <div class="b" onclick="sel(this,'fg','uk')">未確認</div>
+  </div>
+  <div class="g">
+  <label>アイキャッチ（ステージチェンジ）</label>
+  <div class="b" onclick="sel(this,'ec','bk')">黒背景</div>
+  <div class="b" onclick="sel(this,'ec','rb')">ライバル+黒</div>
+  <div class="b" onclick="sel(this,'ec','mh')">モノクロ波多野</div>
+  <div class="b" onclick="sel(this,'ec','no')">通常</div>
+  <div class="b" onclick="sel(this,'ec','uk')">未確認</div>
+  </div>
+  <div class="g">
+  <label>予想屋/舟券セリフ（末尾50G）</label>
+  <div class="b" onclick="sel(this,'fc','ho')">洞口親父</div>
+  <div class="b" onclick="sel(this,'fc','ku')">櫛田</div>
+  <div class="b" onclick="sel(this,'fc','ha')">浜岡</div>
+  <div class="b" onclick="sel(this,'fc','ot')">その他</div>
+  <div class="b" onclick="sel(this,'fc','no')">未到達</div>
+  </div>
+
+  <div id="D"><h3>判定根拠</h3></div>
+  <button id="R" onclick="resetAll()">リセット（次の台へ）</button>
+  <div id="P" class="wait">項目を入力してください<small></small></div>
+
+  <script>
+  var S={gc:0,md:0};
+  function sel(el,k,v){
+    var p=el.parentNode;
+    var bs=p.querySelectorAll('.b');
+    for(var i=0;i<bs.length;i++) bs[i].classList.remove('on');
+    el.classList.add('on');
+    S[k]=v;
+    ev();
+  }
+  function ev(){
+    var R=[];
+    var gc=S.gc||0,md=S.md||0,rt=S.xr||'equal';
+    if(S.lp==='blink') R.push([2,'下パネル点滅 → 設定L濃厚。回避推奨']);
+    if(S.lp==='off') R.push([0,'下パネル消灯 → AT確定！即打ち']);
+    if(S.ex==='pg') R.push([0,'ペンギンストック → G数不問でAT当選まで打ち切り']);
+    if(S.ex==='es') R.push([0,'EXストック → AT当選まで打ち切り（機械割100%超）']);
+    if(S.ex==='eg') R.push([0,'EXゲーム → AT当選まで打ち切り（機械割100%超）']);
+    if(S.hm==='lv') R.push([0,'ロゴ+V → 次回天国濃厚。1周期打ち切り']);
+    if(S.hm==='ar') R.push([0,'ありさ映り込み → 復活濃厚！即打ち']);
+    if(S.hm==='mh'||S.rh==='mh') R.push([0,'モノクロ波多野 → 最強シナリオ。差枚不問で打ち切り']);
+    if(S.hm==='ao'||S.rh==='ao') R.push([0,'青島ヘルメット → 差枚不問でAT当選まで打ち切り']);
+    if(S.fg==='sc'||S.fg==='sm') R.push([0,'1G目に強レア役 → 天国濃厚。1周期打ち切り']);
+    if(S.ec==='mh') R.push([0,'アイキャッチ モノクロ波多野 → B2/艇王シナリオ濃厚']);
+    if(S.ec==='rb') R.push([0,'ライバル+黒 → ライバルモード＋期待度UP']);
+    if(S.hm==='lk') R.push([1,'ロゴ+キラキラ → 通常B or 天国。1〜2周期打って判断']);
+    if((S.hm==='ot'||S.rh==='ot')&&S.rh!=='mh'&&S.rh!=='ao') R.push([1,'ライバルヘルメット(その他) →
+  機械割100%超。差枚も考慮']);
+    if(S.ec==='bk') R.push([1,'黒背景 → 当該周期のAT期待度UP。CZまで継続']);
+    if(S.fc==='ho'||S.fc==='ku') R.push([1,'洞口親父/櫛田 → モードB以上濃厚（天井短縮）']);
+    if(S.fc==='ha') R.push([1,'浜岡の予想屋 → 当該周期の当選期待度高め']);
+    if(md>=1400&&S.pp!=='hq') R.push([0,'差枚+'+md+' → 切断ライン(+1600)付近。1周期で切断狙い']);
+    if(md<0) R.push([1,'差枚'+md+' → マイナス圏は優遇区間の可能性']);
+    if(S.pp==='bw'&&md>0&&md<1400) R.push([2,'大勝ち後やめ＋差枚プラス(切断未達) → 冷遇区間の可能性']);
+    var cb=rt==='equal'?400:500;
+    if(gc>=cb) R.push([1,'AT後'+gc+'G → 天井狙い圏内（'+(rt==='equal'?'等価':'5.6枚')+'で'+cb+'G〜）']);
+    if(S.sl==='off'&&gc<50) R.push([1,'有利区間ランプ消灯＋低G → リセット恩恵（機械割102%）']);
+    if(S.pp==='aq'&&gc<=5&&md<1400) R.push([1,'AT後即やめ → 1周期目の当選期待度約40%']);
+    var go=0,st=0,ca=0;
+    for(var i=0;i<R.length;i++){if(R[i][0]===0)go++;if(R[i][0]===1)ca++;if(R[i][0]===2)st++}
+    var p=document.getElementById('P');
+    var d=document.getElementById('D');
+    if(go>0){p.className='go';p.innerHTML='GO - 打つべき<small>'+R.filter(function(x){return
+  x[0]===0})[0][1]+'</small>'}
+    else if(st>0&&go===0){p.className='stop';p.innerHTML='STOP - 回避<small>'+R.filter(function(x){return
+  x[0]===2})[0][1]+'</small>'}
+    else if(ca>0){p.className='caut';p.innerHTML='条件付きGO<small>'+R.filter(function(x){return
+  x[0]===1})[0][1]+'</small>'}
+    else{p.className='wait';p.innerHTML='項目を入力してください<small></small>'}
+    if(R.length>0){d.style.display='block';var h='<h3>判定根拠</h3>';for(var i=0;i<R.length;i++){var
+  c=R[i][0]===0?'tgo':R[i][0]===2?'tst':'tca';var l=R[i][0]===0?'GO':R[i][0]===2?'STOP':'条件付';h+='<div><span
+   class="t '+c+'">'+l+'</span>'+R[i][1]+'</div>'}d.innerHTML=h}else{d.style.display='none'}
+  }
+  function resetAll(){
+    S={gc:0,md:0};
+    var bs=document.querySelectorAll('.b');
+    for(var i=0;i<bs.length;i++) bs[i].classList.remove('on');
+    document.getElementById('gc').value='';
+    document.getElementById('md').value='';
+    document.getElementById('D').style.display='none';
+    var p=document.getElementById('P');p.className='wait';p.innerHTML='項目を入力してください<small></small>';
+  }
+  </script>
+  </body>
+  </html>
