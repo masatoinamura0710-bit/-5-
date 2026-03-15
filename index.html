@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>モンキーターンV 台判定</title>
+<style>
+  :root {
+    --go: #00c853;
+    --stop: #ff1744;
+    --caution: #ffa000;
+    --bg: #1a1a2e;
+    --card: #16213e;
+    --text: #e0e0e0;
+    --accent: #0f3460;
+    --border: #2a2a4a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+    padding-bottom: 120px;
+  }
+  header {
+    background: var(--accent);
+    padding: 12px 16px;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 2px solid var(--border);
+  }
+  header h1 { font-size: 16px; font-weight: 700; letter-spacing: 1px; }
+  header p { font-size: 11px; opacity: 0.7; margin-top: 2px; }
+​
+  /* Verdict Banner */
+  #verdict-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+    padding: 14px 16px;
+    text-align: center;
+    font-size: 20px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    transition: background 0.3s;
+    border-top: 2px solid rgba(255,255,255,0.1);
+  }
+  #verdict-banner.go { background: var(--go); color: #000; }
+  #verdict-banner.stop { background: var(--stop); color: #fff; }
+  #verdict-banner.caution { background: var(--caution); color: #000; }
+  #verdict-banner.neutral { background: var(--border); color: var(--text); }
+  #verdict-reason {
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0;
+    margin-top: 2px;
+  }
+​
+  /* Sections */
+  .section {
+    margin: 12px;
+    background: var(--card);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .section-header {
+    background: var(--accent);
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .section-header .cost {
+    margin-left: auto;
+    font-size: 10px;
+    background: rgba(255,255,255,0.15);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 400;
+  }
+​
+  /* Check Items */
+  .check-item {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .check-item:last-child { border-bottom: none; }
+  .check-label {
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .check-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .check-options button {
+    background: var(--border);
+    color: var(--text);
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .check-options button.selected {
+    background: var(--accent);
+    border-color: #4fc3f7;
+    color: #fff;
+    font-weight: 700;
+  }
+  .check-options button:active { transform: scale(0.95); }
+​
+  /* Number Input */
+  .num-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .num-input-wrap input {
+    width: 100px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 8px 10px;
+    font-size: 14px;
+    text-align: right;
+  }
+  .num-input-wrap input:focus {
+    outline: none;
+    border-color: #4fc3f7;
+  }
+  .num-input-wrap span { font-size: 12px; opacity: 0.7; }
+​
+  /* Reset Button */
+  .reset-wrap {
+    text-align: center;
+    padding: 16px;
+  }
+  .reset-wrap button {
+    background: var(--border);
+    color: var(--text);
+    border: none;
+    border-radius: 8px;
+    padding: 10px 32px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+​
+  /* Result details */
+  #result-details {
+    margin: 12px;
+    background: var(--card);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 14px;
+    display: none;
+  }
+  #result-details h3 {
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+  #result-details ul {
+    list-style: none;
+    padding: 0;
+  }
+  #result-details li {
+    font-size: 12px;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  #result-details li:last-child { border-bottom: none; }
+  #result-details li .tag {
+    display: inline-block;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-right: 4px;
+    font-weight: 700;
+  }
+  .tag-go { background: var(--go); color: #000; }
+  .tag-stop { background: var(--stop); color: #fff; }
+  .tag-caution { background: var(--caution); color: #000; }
+</style>
+</head>
+<body>
+​
+<header>
+  <h1>MONKEY TURN V CHECKER</h1>
+  <p>途中から座る台の判定ツール</p>
+</header>
+​
+<!-- Section 1: Exchange Rate -->
+<div class="section">
+  <div class="section-header">
+    <span>基本設定</span>
+  </div>
+  <div class="check-item">
+    <div class="check-label">交換率</div>
+    <div class="check-options" data-key="exchangeRate">
+      <button data-value="equal">等価</button>
+      <button data-value="56">5.6枚</button>
+    </div>
+  </div>
+</div>
+​
+<!-- Section 2: 0G Cost Checks -->
+<div class="section">
+  <div class="section-header">
+    <span>データカウンター確認</span>
+    <span class="cost">0G</span>
+  </div>
+  <div class="check-item">
+    <div class="check-label">AT後ゲーム数</div>
+    <div class="num-input-wrap">
+      <input type="number" id="gameCount" inputmode="numeric" placeholder="0">
+      <span>G</span>
+    </div>
+  </div>
+  <div class="check-item">
+    <div class="check-label">差枚数</div>
+    <div class="num-input-wrap">
+      <input type="number" id="medalDiff" inputmode="numeric" placeholder="0">
+      <span>枚（マイナスは - 付き）</span>
+    </div>
+  </div>
+  <div class="check-item">
+    <div class="check-label">前任者の状況（推測）</div>
+    <div class="check-options" data-key="prevPlayer">
+      <button data-value="bigwin_quit">大勝ち後やめ</button>
+      <button data-value="at_quit">AT後即やめ</button>
+      <button data-value="hamari_quit">ハマりやめ</button>
+      <button data-value="unknown">不明</button>
+    </div>
+  </div>
+</div>
+​
+<!-- Section 3: Visual checks 0G -->
+<div class="section">
+  <div class="section-header">
+    <span>目視・タッチ確認</span>
+    <span class="cost">0G</span>
+  </div>
+  <div class="check-item">
+    <div class="check-label">下パネル</div>
+    <div class="check-options" data-key="lowerPanel">
+      <button data-value="off">消灯</button>
+      <button data-value="blink">点滅</button>
+      <button data-value="on">通常点灯</button>
+      <button data-value="unknown">未確認</button>
+    </div>
+  </div>
+  <div class="check-item">
+    <div class="check-label">有利区間ランプ（クレジット右下）</div>
+    <div class="check-options" data-key="sectionLamp">
+      <button data-value="off">消灯</button>
+      <button data-value="on">点灯</button>
+      <button data-value="unknown">未確認</button>
+    </div>
+  </div>
+  <div class="check-item">
+    <div class="check-label">EXアイテム（サブ液晶タッチ）</div>
+    <div class="check-options" data-key="exItem">
+      <button data-value="penguin">ペンギン</button>
+      <button data-value="ex_stock">EXストック</button>
+      <button data-value="ex_game">EXゲーム</button>
+      <button data-value="none">なし</button>
+      <button data-value="unknown">未確認</button>
+    </div>
+  </div>
+  <div class="check-item">
+    <div class="check-label">ヘルメット（サブ液晶タッチ）</div>
+    <div class="check-options" data-key="helmet">
+      <button data-value="logo_v">ロゴ+V</button>
+      <button data-value="arisa">ありさ映り込み</button>
+      <button data-value="logo_kira">ロゴ+キラキラ</button>
+      <button data-value="mono_hatano">モノクロ波多野</button>
+      <button data-value="aoshima">青島</button>
+      <button data-value="other_rival">その他ライバル</button>
+      <button data-value="normal">通常</button>
+      <button data-value="unknown">未確認</button>
+    </div>
+  </div>
+  <div class="check-item">
+    <div class="check-label">ライバルヘルメット（メイン画面）</div>
+    <div class="check-options" data-key="rivalHelmet">
+      <button data-value="mono_hatano">モノクロ波多野</button>
+      <button data-value="aoshima">青島</button>
+      <button data-value="other">その他キャラ</button>
+      <button data-value="none">なし</button>
+      <button data-value="unknown">未確認</button>
+    </div>
+  </div>
+</div>
+​
+<!-- Section 4: 1G+ checks -->
+<div class="section">
+  <div class="section-header">
+    <span>実戦中の確認</span>
+    <span class="cost">1G~</span>
+  </div>
+  <div class="check-item">
+    <div class="check-label">1G目のレア役</div>
+    <div class="check-options" data-key="firstGRare">
+      <button data-value="strong_cherry">強チェリー</button>
+      <button data-value="strong_chance">強チャンス目</button>
+      <button data-value="weak">弱レア役</button>
+      <button data-value="none">ハズレ/リプ</button>
+      <button data-value="unknown">未確認</button>
+    </div>
+  </div>
+  <div class="check-item">
+    <div class="check-label">アイキャッチ（ステージチェンジ）</div>
+    <div class="check-options" data-key="eyecatch">
+      <button data-value="black">黒背景</button>
+      <button data-value="rival_black">ライバル+黒</button>
+      <button data-value="mono_hatano">モノクロ波多野</button>
+      <button data-value="normal">通常</button>
+      <button data-value="unknown">未確認</button>
+    </div>
+  </div>
+  <div class="check-item">
+    <div class="check-label">予想屋/舟券セリフ（末尾50G）</div>
+    <div class="check-options" data-key="forecast">
+      <button data-value="horaoyaji">洞口親父</button>
+      <button data-value="kushida">櫛田</button>
+      <button data-value="hamaoka">浜岡</button>
+      <button data-value="other">その他</button>
+      <button data-value="none">未到達</button>
+    </div>
+  </div>
+</div>
+​
+<!-- Result Details -->
+<div id="result-details">
+  <h3>判定根拠</h3>
+  <ul id="reasons-list"></ul>
+</div>
+​
+<!-- Reset -->
+<div class="reset-wrap">
+  <button onclick="resetAll()">リセット（次の台へ）</button>
+</div>
+​
+<!-- Verdict Banner -->
+<div id="verdict-banner" class="neutral">
+  <div>項目を入力してください</div>
+  <div id="verdict-reason"></div>
+</div>
+​
+<script>
+const state = {};
+​
+// Button selection logic
+document.querySelectorAll('.check-options').forEach(group => {
+  const key = group.dataset.key;
+  group.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      group.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      state[key] = btn.dataset.value;
+      evaluate();
+    });
+  });
+});
+​
+// Number input logic
+document.getElementById('gameCount').addEventListener('input', e => {
+  state.gameCount = parseInt(e.target.value) || 0;
+  evaluate();
+});
+document.getElementById('medalDiff').addEventListener('input', e => {
+  state.medalDiff = parseInt(e.target.value) || 0;
+  evaluate();
+});
+​
+function evaluate() {
+  const reasons = [];
+  let verdict = 'neutral';
+  let mainReason = '';
+​
+  const rate = state.exchangeRate || 'equal';
+  const gc = state.gameCount || 0;
+  const md = state.medalDiff || 0;
+​
+  // --- STOP conditions ---
+  if (state.lowerPanel === 'blink') {
+    reasons.push({ level: 'stop', text: '下パネル点滅 → 設定L濃厚。回避推奨' });
+  }
+​
+  // --- INSTANT GO conditions ---
+  if (state.lowerPanel === 'off') {
+    reasons.push({ level: 'go', text: '下パネル消灯 → AT確定！即打ち' });
+  }
+  if (state.exItem === 'penguin') {
+    reasons.push({ level: 'go', text: 'ペンギンストック所持 → G数不問でAT当選まで打ち切り' });
+  }
+  if (state.exItem === 'ex_stock') {
+    reasons.push({ level: 'go', text: 'EXストック所持 → AT当選まで打ち切り（機械割100%超）' });
+  }
+  if (state.exItem === 'ex_game') {
+    reasons.push({ level: 'go', text: 'EXゲーム所持 → AT当選まで打ち切り（機械割100%超）' });
+  }
+  if (state.helmet === 'logo_v') {
+    reasons.push({ level: 'go', text: 'ヘルメット ロゴ+V → 次回天国濃厚。1周期打ち切り' });
+  }
+  if (state.helmet === 'arisa') {
+    reasons.push({ level: 'go', text: 'ありさ映り込み → 復活（引き戻し）濃厚！即打ち' });
+  }
+  if (state.helmet === 'mono_hatano' || state.rivalHelmet === 'mono_hatano') {
+    reasons.push({ level: 'go', text: 'モノクロ波多野 → 最強シナリオ濃厚。差枚不問で打ち切り' });
+  }
+  if (state.helmet === 'aoshima' || state.rivalHelmet === 'aoshima') {
+    reasons.push({ level: 'go', text: '青島ヘルメット → 差枚不問でAT当選まで打ち切り' });
+  }
+  if (state.firstGRare === 'strong_cherry' || state.firstGRare === 'strong_chance') {
+    reasons.push({ level: 'go', text: '1G目に強レア役 → 天国濃厚。1周期打ち切り推奨' });
+  }
+  if (state.eyecatch === 'mono_hatano') {
+    reasons.push({ level: 'go', text: 'アイキャッチ モノクロ波多野 → B2/艇王シナリオ濃厚' });
+  }
+​
+  // --- CONDITIONAL GO ---
+  if (state.helmet === 'logo_kira') {
+    reasons.push({ level: 'caution', text: 'ロゴ+キラキラ → 通常B or 天国。1〜2周期打って判断' });
+  }
+  if ((state.helmet === 'other_rival' || state.rivalHelmet === 'other') && state.rivalHelmet !== 'mono_hatano' && state.rivalHelmet !== 'aoshima') {
+    reasons.push({ level: 'caution', text: 'ライバルヘルメット(その他) → AT当選まで打てば機械割100%超。差枚も考慮' });
+  }
+  if (state.eyecatch === 'black') {
+    reasons.push({ level: 'caution', text: 'アイキャッチ黒背景 → 当該周期のAT期待度UP。CZまで継続' });
+  }
+  if (state.eyecatch === 'rival_black') {
+    reasons.push({ level: 'go', text: 'ライバル+黒アイキャッチ → ライバルモード＋期待度UP。大チャンス' });
+  }
+  if (state.forecast === 'horaoyaji' || state.forecast === 'kushida') {
+    reasons.push({ level: 'caution', text: '洞口親父/櫛田セリフ → モードB以上濃厚（天井短縮）。継続推奨' });
+  }
+  if (state.forecast === 'hamaoka') {
+    reasons.push({ level: 'caution', text: '浜岡の予想屋 → 当該周期の当選期待度高め' });
+  }
+​
+  // Medal diff based
+  if (md >= 1400 && (state.prevPlayer === 'at_quit' || state.prevPlayer === 'bigwin_quit' || state.prevPlayer === 'unknown')) {
+    reasons.push({ level: 'go', text: `差枚+${md} → 有利区間切断ライン(+1600)に近い。1周期で切断狙い` });
+  }
+  if (md < 0) {
+    reasons.push({ level: 'caution', text: `差枚${md} → マイナス圏は優遇区間の可能性。AT期待獲得枚数UP傾向` });
+  }
+  if (state.prevPlayer === 'bigwin_quit' && md > 0 && md < 1400) {
+    reasons.push({ level: 'stop', text: '大勝ち後やめ＋差枚プラス(切断未達) → 冷遇区間の可能性あり' });
+  }
+​
+  // Game count based ceiling
+  const ceilingBorder = rate === 'equal' ? 400 : 500;
+  if (gc >= ceilingBorder) {
+    reasons.push({ level: 'caution', text: `AT後${gc}G → 天井狙い圏内（${rate === 'equal' ? '等価' : '5.6枚'}で${ceilingBorder}G〜）` });
+  }
+​
+  // Section lamp
+  if (state.sectionLamp === 'off' && gc < 50) {
+    reasons.push({ level: 'caution', text: '有利区間ランプ消灯＋低G数 → リセット恩恵あり（機械割102%）。1周期狙い' });
+  }
+​
+  // AT after instant quit - 1 cycle
+  if (state.prevPlayer === 'at_quit' && gc <= 5 && md < 1400) {
+    reasons.push({ level: 'caution', text: 'AT後即やめ台 → 1周期目の当選期待度約40%（出玉率100%超）' });
+  }
+​
+  // --- Determine overall verdict ---
+  const goReasons = reasons.filter(r => r.level === 'go');
+  const stopReasons = reasons.filter(r => r.level === 'stop');
+  const cautionReasons = reasons.filter(r => r.level === 'caution');
+​
+  if (stopReasons.length > 0 && goReasons.length === 0) {
+    verdict = 'stop';
+    mainReason = stopReasons[0].text;
+  } else if (goReasons.length > 0) {
+    verdict = 'go';
+    mainReason = goReasons[0].text;
+  } else if (cautionReasons.length > 0) {
+    verdict = 'caution';
+    mainReason = cautionReasons[0].text;
+  } else {
+    verdict = 'neutral';
+    mainReason = '';
+  }
+​
+  // Update banner
+  const banner = document.getElementById('verdict-banner');
+  const reasonEl = document.getElementById('verdict-reason');
+  banner.className = verdict;
+​
+  const labels = {
+    go: 'GO - 打つべき',
+    stop: 'STOP - 回避',
+    caution: '条件付きGO',
+    neutral: '項目を入力してください'
+  };
+  banner.innerHTML = `<div>${labels[verdict]}</div><div id="verdict-reason">${mainReason}</div>`;
+​
+  // Update details
+  const details = document.getElementById('result-details');
+  const list = document.getElementById('reasons-list');
+  if (reasons.length > 0) {
+    details.style.display = 'block';
+    list.innerHTML = reasons.map(r => {
+      const tagClass = r.level === 'go' ? 'tag-go' : r.level === 'stop' ? 'tag-stop' : 'tag-caution';
+      const tagLabel = r.level === 'go' ? 'GO' : r.level === 'stop' ? 'STOP' : '条件付';
+      return `<li><span class="tag ${tagClass}">${tagLabel}</span>${r.text}</li>`;
+    }).join('');
+  } else {
+    details.style.display = 'none';
+  }
+}
+​
+function resetAll() {
+  Object.keys(state).forEach(k => delete state[k]);
+  document.querySelectorAll('.check-options button').forEach(b => b.classList.remove('selected'));
+  document.getElementById('gameCount').value = '';
+  document.getElementById('medalDiff').value = '';
+  document.getElementById('result-details').style.display = 'none';
+  const banner = document.getElementById('verdict-banner');
+  banner.className = 'neutral';
+  banner.innerHTML = '<div>項目を入力してください</div><div id="verdict-reason"></div>';
+}
+</script>
+​
+</body>
+</html>
